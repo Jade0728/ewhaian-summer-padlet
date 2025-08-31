@@ -4,12 +4,15 @@ import QuestionCard from '../components/QuestionCard.jsx';
 import AddQuestionForm from '../components/AddQuestionForm.jsx';
 import EditQuestionForm from '../components/EditQuestionForm.jsx';
 import useQuestions from '../hook/useQuestions.js';
+import { axiosInstance } from '../lib/axios.js';
+import useCurrentUser from "../hook/useCurrentUser.js";
 
 const Home = () => {
   const { questions, addQuestion, editQuestion, deleteQuestion, likeQuestion } = useQuestions();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const { currentUser, loading: userLoading } = useCurrentUser();
 
   // 질문 추가 핸들러
   const handleAddQuestion = (questionData) => {
@@ -48,6 +51,14 @@ const Home = () => {
     setEditingQuestion(null);
   };
 
+  const getAuthorId = (author) => {
+    if (!author) return null;
+    // populate된 경우: author = { _id, username, ... }
+    if (typeof author === 'object') return author._id || author.id || null;
+    // populate 안 된 경우: author = "ObjectId문자열"
+    return author;
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-700 via-green-800 to-green-900">
       {/* 메인 컨테이너 - 반응형 패딩과 여백 */}
@@ -61,7 +72,8 @@ const Home = () => {
         </div>
         
         {/* 질문 그리드 섹션 - 반응형 여백 */}
-        <section className="mb-8 sm:mb-12 lg:mb-16"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="mb-8 sm:mb-12 lg:mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {questions.map((question) => (
                 <QuestionCard
                   key={question.id}
