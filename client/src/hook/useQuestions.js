@@ -1,65 +1,42 @@
-import { useState } from 'react';
+// /client/src/hook/useQuestions.js (예시)
+import { useEffect, useState } from "react";
+import {
+  getQuestions,
+  createQuestionAPI,
+  updateQuestionAPI,
+  deleteQuestionAPI,
+  toggleLikeAPI,
+} from "../api/question.js";
 
-const useQuestions = () => {
-  const [questions, setQuestions] = useState([  ]);
+export default function useQuestions() {
+  const [questions, setQuestions] = useState([]);
 
-  // 질문 추가
-  const addQuestion = (questionData) => {
-    const newQuestion = {
-      id: questions.length > 0 ? Math.max(...questions.map(q => q.id)) + 1 : 1,
-      ...questionData,
-      likes: 0,
-      liked: false,
-      createdAt: new Date().toISOString()
-    };
-    
-    setQuestions(prev => [newQuestion, ...prev]);
+  useEffect(() => {
+    (async () => {
+      const data = await getQuestions();
+      setQuestions(data);
+    })();
+  }, []);
+
+  const addQuestion = async ({ title, content }) => {
+    const created = await createQuestionAPI({ title, content });
+    setQuestions(prev => [created, ...prev]);
   };
 
-  // 질문 수정
-  const editQuestion = (updatedQuestion) => {
-    setQuestions(prev => 
-      prev.map(question => 
-        question.id === updatedQuestion.id 
-          ? { ...question, ...updatedQuestion, updatedAt: new Date().toISOString() }
-          : question
-      )
-    );
+  const editQuestion = async ({ id, title, content }) => {
+    const updated = await updateQuestionAPI({ id, title, content });
+    setQuestions(prev => prev.map(q => (q.id === id ? updated : q)));
   };
 
-  // 질문 삭제
-  const deleteQuestion = (questionId) => {
-    setQuestions(prev => prev.filter(question => question.id !== questionId));
+  const deleteQuestion = async (id) => {
+    await deleteQuestionAPI(id);
+    setQuestions(prev => prev.filter(q => q.id !== id));
   };
 
-  // 좋아요 토글
-  const likeQuestion = (questionId) => {
-    setQuestions(prev =>
-      prev.map(question =>
-        question.id === questionId
-          ? {
-              ...question,
-              liked: !question.liked,
-              likes: question.liked ? question.likes - 1 : question.likes + 1
-            }
-          : question
-      )
-    );
+  const likeQuestion = async (id) => {
+    const updated = await toggleLikeAPI(id);
+    setQuestions(prev => prev.map(q => (q.id === id ? updated : q)));
   };
 
-  // 특정 질문 찾기
-  const findQuestion = (questionId) => {
-    return questions.find(question => question.id === questionId);
-  };
-
-  return {
-    questions,
-    addQuestion,
-    editQuestion,
-    deleteQuestion,
-    likeQuestion,
-    findQuestion
-  };
-};
-
-export default useQuestions;
+  return { questions, addQuestion, editQuestion, deleteQuestion, likeQuestion };
+}
